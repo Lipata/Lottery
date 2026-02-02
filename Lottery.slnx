@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Lottery.Core/Lottery.Core.csproj" />
+  <Project Path="Lottery.Test/Lottery.Test.csproj" />
+  <Project Path="Lottery/Lottery.csproj" />
+</Solution>

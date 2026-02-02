@@ -1,0 +1,14 @@
+﻿namespace Lottery.Core.Models
+{
+    internal class Player
+    {
+        public required int Id { get; init; }
+        public required string Name { get; init; }
+
+        public bool IsCPU { get; init; }
+
+        public decimal Balance { get; set; }
+
+        public List<Ticket> Tickets { get; init; } = new();
+    }
+}
