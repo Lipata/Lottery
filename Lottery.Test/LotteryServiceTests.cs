@@ -51,6 +51,8 @@ namespace Lottery.Test
             return new ServiceCollection()
                 .AddSingleton(settings)
                 .AddSingleton(random)
+                .AddTransient<IPlayerFactory, PlayerFactory>()
+                .AddTransient<ITicketService, TicketService>()
                 .AddTransient<ILotteryService, LotteryService>()
                 .BuildServiceProvider();
         }

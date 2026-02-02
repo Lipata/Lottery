@@ -54,6 +54,8 @@ static ServiceProvider BuildServiceProvider(IConfiguration configuration)
     return new ServiceCollection()
         .AddSingleton(lotterySettings)
         .AddSingleton<IRandomGenerator, RandomGenerator>()
+        .AddTransient<IPlayerFactory, PlayerFactory>()
+        .AddTransient<ITicketService, TicketService>()
         .AddTransient<ILotteryService, LotteryService>()
         .BuildServiceProvider();
 }
