@@ -2,7 +2,7 @@
 
 namespace Lottery.Core.Interfaces
 {
-    internal interface ILotteryService
+    public interface ILotteryService
     {
         void InitializeGame();
 

@@ -3,7 +3,7 @@ using Lottery.Core.Models;
 
 namespace Lottery.Core.Services
 {
-    internal class LotteryService : ILotteryService
+    public class LotteryService : ILotteryService
     {
         private readonly List<Player> _players = new();
 

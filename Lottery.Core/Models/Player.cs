@@ -1,6 +1,6 @@
 ﻿namespace Lottery.Core.Models
 {
-    internal class Player
+    public class Player
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
