@@ -42,7 +42,13 @@ namespace Lottery.Test
                 MinPlayers = minPlayers,
                 MaxPlayers = maxPlayers,
                 MinTicketsPerPlayer = minTicketsPerPlayer,
-                MaxTicketsPerPlayer = maxTicketsPerPlayer
+                MaxTicketsPerPlayer = maxTicketsPerPlayer,
+                Prizes = new PrizeSettings
+                {
+                    GrandPrize = new PrizeTier { RevenuePercentage = 0.50m, FixedWinnerCount = 1 },
+                    SecondTier = new PrizeTier { RevenuePercentage = 0.30m, WinnersPercentage = 0.10m },
+                    ThirdTier = new PrizeTier { RevenuePercentage = 0.10m, WinnersPercentage = 0.20m }
+                }
             };
         }
 
@@ -224,6 +230,116 @@ namespace Lottery.Test
 
             var humanPlayer = _sut.GetPlayers().First(p => !p.IsCPU);
             Assert.All(humanPlayer.Tickets, t => Assert.Equal(humanPlayer.Id, t.PlayerId));
+        }
+
+        [Theory]
+        [InlineData(10, 1, 10)]
+        [InlineData(5, 2, 10)]
+        [InlineData(20, 0.5, 10)]
+        public void ExecuteDraw_CalculatesCorrectRevenue(int ticketCount, decimal ticketPrice, decimal expectedRevenue)
+        {
+            var settings = CreateSettings(initialBalance: 100m, ticketPrice: ticketPrice);
+            var sut = CreateService(settings, cpuPlayerCount: 0);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(ticketCount);
+            var result = sut.ExecuteDraw();
+
+            Assert.Equal(expectedRevenue, result.Revenue);
+        }
+
+        [Fact]
+        public void ExecuteDraw_CalculatesCorrectProfit()
+        {
+            var settings = CreateSettings(initialBalance: 100m, ticketPrice: 1m);
+            var sut = CreateService(settings, cpuPlayerCount: 0);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(10);
+            var result = sut.ExecuteDraw();
+
+            // Revenue = 10, Prizes = 50% + 30% + 10% = 90%, Profit = 10%
+            Assert.Equal(1m, result.Profit);
+        }
+
+        [Fact]
+        public void ExecuteDraw_ReturnsWinners()
+        {
+            var settings = CreateSettings(initialBalance: 100m, ticketPrice: 1m);
+            var sut = CreateService(settings, cpuPlayerCount: 2);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(5);
+            var result = sut.ExecuteDraw();
+
+            Assert.NotEmpty(result.Winners);
+        }
+
+        [Fact]
+        public void ExecuteDraw_GrandPrizeHasOneWinner()
+        {
+            var settings = CreateSettings(initialBalance: 100m, ticketPrice: 1m);
+            var sut = CreateService(settings, cpuPlayerCount: 5);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(5);
+            var result = sut.ExecuteDraw();
+
+            // Grand prize = 50% of revenue, 1 winner
+            var grandPrizeAmount = result.Revenue * 0.50m;
+            var grandPrizeWinners = result.Winners.Where(w => w.TotalAmountWon == grandPrizeAmount).ToList();
+            Assert.Single(grandPrizeWinners);
+        }
+
+        [Fact]
+        public void ExecuteDraw_WinnerHasCorrectPlayerName()
+        {
+            var settings = CreateSettings(initialBalance: 100m, ticketPrice: 1m);
+            var sut = CreateService(settings, cpuPlayerCount: 0);
+
+            sut.InitializePlayers("TestPlayer");
+            sut.BuyTickets(5);
+            var result = sut.ExecuteDraw();
+
+            Assert.All(result.Winners, w => Assert.Equal("TestPlayer", w.PlayerName));
+        }
+
+        [Fact]
+        public void ExecuteDraw_NoWinnersWhenNoTickets()
+        {
+            _sut.InitializePlayers("Test");
+            var result = _sut.ExecuteDraw();
+
+            Assert.Empty(result.Winners);
+            Assert.Equal(0m, result.Revenue);
+            Assert.Equal(0m, result.Profit);
+        }
+
+        [Fact]
+        public void ExecuteDraw_TotalPrizesPaidMatchesWinnerAmounts()
+        {
+            var settings = CreateSettings(initialBalance: 100m, ticketPrice: 1m);
+            var sut = CreateService(settings, cpuPlayerCount: 5);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(10);
+            var result = sut.ExecuteDraw();
+
+            var totalPrizesPaid = result.Winners.Sum(w => w.TotalAmountWon);
+            Assert.Equal(result.Revenue - result.Profit, totalPrizesPaid);
+        }
+
+        [Fact]
+        public void ExecuteDraw_WinnerHasCorrectPlayerId()
+        {
+            var settings = CreateSettings(initialBalance: 100m, ticketPrice: 1m);
+            var sut = CreateService(settings, cpuPlayerCount: 0);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(5);
+            var result = sut.ExecuteDraw();
+
+            Assert.All(result.Winners, w => Assert.Equal(1, w.PlayerId));
         }
     }
 }

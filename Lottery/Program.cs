@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Lottery.Core.Interfaces;
 using Lottery.Core.Models;
 using Lottery.Core.Services;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 try
 {
@@ -10,24 +10,47 @@ try
 
     using var serviceProvider = BuildServiceProvider(configuration);
     var lotteryService = serviceProvider.GetRequiredService<ILotteryService>();
+    var lotterySettings = GetLotterySettings(configuration);
 
     Console.Write("Enter your name: ");
-    var playerName = Console.ReadLine() ?? "Player";
+    var playerName = Console.ReadLine() ?? "Player 1";
+    Console.WriteLine($@"
+
+Welcome to the Bede Lottery, {playerName}!
+
+* Your digital balance: {lotterySettings.InitialBalance:C}
+* Ticket Price: {lotterySettings.TicketPrice:C}
+
+");
+
+
+
     lotteryService.InitializePlayers(playerName);
 
-    Console.Write("How many tickets do you want to buy? ");
-    if (!int.TryParse(Console.ReadLine(), out var ticketCount) || ticketCount < 1)
+    Console.Write($"How many tickets do you want to buy, {playerName}? ");
+    if (!int.TryParse(Console.ReadLine(), out var ticketCount) || ticketCount < 1 || ticketCount > 10)
     {
-        Console.WriteLine("Invalid ticket count. Using default of 1.");
+        Console.WriteLine("Invalid ticket count. Please enter a number between 1 and 10. Using default of 1.");
         ticketCount = 1;
     }
     lotteryService.BuyTickets(ticketCount);
 
     var result = lotteryService.ExecuteDraw();
 
-    Console.WriteLine($"Players: {lotteryService.GetPlayers().Count()}");
-    Console.WriteLine($"Revenue: {result.Revenue:C}");
-    Console.WriteLine($"Profit: {result.Profit:C}");
+
+    Console.WriteLine($@"
+{lotteryService.GetPlayers().Count()} other CPU players also have purchased tickets.
+
+Tickets Draw Results:
+
+* Grand Prize: Player wins !""
+* Second Tier: Players: 
+* Third Tier: Players: 
+
+Congratulations to the winners!
+
+House Profit: {result.Profit:C}
+");
 }
 catch (InvalidOperationException ex)
 {
@@ -46,13 +69,14 @@ static IConfiguration BuildConfiguration()
         .Build();
 }
 
+static LotterySettings GetLotterySettings(IConfiguration configuration) { 
+    return configuration.GetSection("LotterySettings").Get<LotterySettings>()
+        ?? throw new InvalidOperationException("LotterySettings configuration is missing");
+}
 static ServiceProvider BuildServiceProvider(IConfiguration configuration)
 {
-    var lotterySettings = configuration.GetSection("LotterySettings").Get<LotterySettings>()
-        ?? throw new InvalidOperationException("LotterySettings configuration is missing");
-
     return new ServiceCollection()
-        .AddSingleton(lotterySettings)
+        .AddSingleton(GetLotterySettings(configuration))
         .AddSingleton<IRandomGenerator, RandomGenerator>()
         .AddTransient<IPlayerFactory, PlayerFactory>()
         .AddTransient<ITicketService, TicketService>()

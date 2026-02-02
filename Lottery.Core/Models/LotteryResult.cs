@@ -12,6 +12,8 @@
         public int PlayerId { get; init; }
         public required string PlayerName { get; init; }
 
+        public PrizeSettings? Tier { get; init; }
+
         public int WinningTicketsCount { get; init; }
 
         public decimal TotalAmountWon { get; init; }
