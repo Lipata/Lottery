@@ -7,10 +7,12 @@ namespace Lottery.Core.Services
     {
         private readonly List<Player> _players = new();
         private readonly LotterySettings _settings;
+        private readonly IRandomGenerator _random;
 
-        public LotteryService(LotterySettings settings)
+        public LotteryService(LotterySettings settings, IRandomGenerator random)
         {
             _settings = settings;
+            _random = random;
         }
 
         public void InitializePlayers(string humanPlayerName)
@@ -49,7 +51,7 @@ namespace Lottery.Core.Services
 
         private IEnumerable<Player> GenerateCpuPlayers()
         {
-            var playerCount = Random.Shared.Next(_settings.MinPlayers, _settings.MaxPlayers + 1);
+            var playerCount = _random.Next(_settings.MinPlayers, _settings.MaxPlayers + 1);
             var startId = _players.Count + 1;
 
             return Enumerable.Range(startId, playerCount)

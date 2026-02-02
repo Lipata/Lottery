@@ -2,6 +2,7 @@ using Lottery.Core.Interfaces;
 using Lottery.Core.Models;
 using Lottery.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 
 namespace Lottery.Test
 {
@@ -9,11 +10,15 @@ namespace Lottery.Test
     {
         private readonly ILotteryService _sut;
         private readonly ServiceProvider _serviceProvider;
+        private readonly Mock<IRandomGenerator> _mockRandom;
 
         public LotteryServiceTests()
         {
+            _mockRandom = new Mock<IRandomGenerator>();
+            _mockRandom.Setup(r => r.Next(It.IsAny<int>(), It.IsAny<int>())).Returns(3);
+
             var settings = CreateSettings();
-            _serviceProvider = BuildServiceProvider(settings);
+            _serviceProvider = BuildServiceProvider(settings, _mockRandom.Object);
             _sut = _serviceProvider.GetRequiredService<ILotteryService>();
         }
 
@@ -32,17 +37,20 @@ namespace Lottery.Test
             };
         }
 
-        private static ServiceProvider BuildServiceProvider(LotterySettings settings)
+        private static ServiceProvider BuildServiceProvider(LotterySettings settings, IRandomGenerator random)
         {
             return new ServiceCollection()
                 .AddSingleton(settings)
+                .AddSingleton(random)
                 .AddTransient<ILotteryService, LotteryService>()
                 .BuildServiceProvider();
         }
 
-        private static ILotteryService CreateService(LotterySettings settings)
+        private static ILotteryService CreateService(LotterySettings settings, int cpuPlayerCount)
         {
-            return BuildServiceProvider(settings).GetRequiredService<ILotteryService>();
+            var mockRandom = new Mock<IRandomGenerator>();
+            mockRandom.Setup(r => r.Next(It.IsAny<int>(), It.IsAny<int>())).Returns(cpuPlayerCount);
+            return BuildServiceProvider(settings, mockRandom.Object).GetRequiredService<ILotteryService>();
         }
 
         [Fact]
@@ -79,7 +87,7 @@ namespace Lottery.Test
         public void InitializePlayers_CreatesHumanPlayerWithCorrectBalance(decimal initialBalance)
         {
             var settings = CreateSettings(initialBalance: initialBalance);
-            var sut = CreateService(settings);
+            var sut = CreateService(settings, cpuPlayerCount: 3);
 
             sut.InitializePlayers("Test");
 
@@ -97,18 +105,18 @@ namespace Lottery.Test
         }
 
         [Theory]
-        [InlineData(3, 3)]
-        [InlineData(5, 10)]
-        [InlineData(1, 1)]
-        public void InitializePlayers_CreatesCpuPlayersWithinRange(int minPlayers, int maxPlayers)
+        [InlineData(3)]
+        [InlineData(5)]
+        [InlineData(10)]
+        public void InitializePlayers_CreatesExactCpuPlayerCount(int expectedCount)
         {
-            var settings = CreateSettings(minPlayers: minPlayers, maxPlayers: maxPlayers);
-            var sut = CreateService(settings);
+            var settings = CreateSettings();
+            var sut = CreateService(settings, cpuPlayerCount: expectedCount);
 
             sut.InitializePlayers("Test");
 
             var cpuCount = sut.GetPlayers().Count(p => p.IsCPU);
-            Assert.InRange(cpuCount, minPlayers, maxPlayers);
+            Assert.Equal(expectedCount, cpuCount);
         }
 
         [Theory]
@@ -116,8 +124,8 @@ namespace Lottery.Test
         [InlineData(50)]
         public void InitializePlayers_CpuPlayersHaveCorrectBalance(decimal initialBalance)
         {
-            var settings = CreateSettings(initialBalance: initialBalance, minPlayers: 3, maxPlayers: 3);
-            var sut = CreateService(settings);
+            var settings = CreateSettings(initialBalance: initialBalance);
+            var sut = CreateService(settings, cpuPlayerCount: 3);
 
             sut.InitializePlayers("Test");
 
@@ -128,8 +136,8 @@ namespace Lottery.Test
         [Fact]
         public void InitializePlayers_CpuPlayersHaveSequentialIds()
         {
-            var settings = CreateSettings(minPlayers: 3, maxPlayers: 3);
-            var sut = CreateService(settings);
+            var settings = CreateSettings();
+            var sut = CreateService(settings, cpuPlayerCount: 3);
 
             sut.InitializePlayers("Test");
 

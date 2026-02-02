@@ -34,6 +34,7 @@ static ServiceProvider BuildServiceProvider(IConfiguration configuration)
 
     return new ServiceCollection()
         .AddSingleton(lotterySettings)
+        .AddSingleton<IRandomGenerator, RandomGenerator>()
         .AddTransient<ILotteryService, LotteryService>()
         .BuildServiceProvider();
 }
