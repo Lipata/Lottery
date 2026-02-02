@@ -4,24 +4,39 @@ using Lottery.Core.Interfaces;
 using Lottery.Core.Models;
 using Lottery.Core.Services;
 
-var configuration = BuildConfiguration();
+try
+{
+    var configuration = BuildConfiguration();
 
-using var serviceProvider = BuildServiceProvider(configuration);
-var lotteryService = serviceProvider.GetRequiredService<ILotteryService>();
+    using var serviceProvider = BuildServiceProvider(configuration);
+    var lotteryService = serviceProvider.GetRequiredService<ILotteryService>();
 
-Console.Write("Enter your name: ");
-var playerName = Console.ReadLine() ?? "Player";
-lotteryService.InitializePlayers(playerName);
+    Console.Write("Enter your name: ");
+    var playerName = Console.ReadLine() ?? "Player";
+    lotteryService.InitializePlayers(playerName);
 
-Console.Write("How many tickets do you want to buy? ");
-var ticketCount = int.Parse(Console.ReadLine() ?? "1");
-lotteryService.BuyTickets(ticketCount);
+    Console.Write("How many tickets do you want to buy? ");
+    if (!int.TryParse(Console.ReadLine(), out var ticketCount) || ticketCount < 1)
+    {
+        Console.WriteLine("Invalid ticket count. Using default of 1.");
+        ticketCount = 1;
+    }
+    lotteryService.BuyTickets(ticketCount);
 
-var result = lotteryService.ExecuteDraw();
+    var result = lotteryService.ExecuteDraw();
 
-Console.WriteLine($"Players: {lotteryService.GetPlayers().Count()}");
-Console.WriteLine($"Revenue: {result.Revenue:C}");
-Console.WriteLine($"Profit: {result.Profit:C}");
+    Console.WriteLine($"Players: {lotteryService.GetPlayers().Count()}");
+    Console.WriteLine($"Revenue: {result.Revenue:C}");
+    Console.WriteLine($"Profit: {result.Profit:C}");
+}
+catch (InvalidOperationException ex)
+{
+    Console.WriteLine($"Configuration error: {ex.Message}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"An error occurred: {ex.Message}");
+}
 
 static IConfiguration BuildConfiguration()
 {
