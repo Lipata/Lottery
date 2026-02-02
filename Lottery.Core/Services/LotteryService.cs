@@ -24,7 +24,7 @@ namespace Lottery.Core.Services
             {
                 Revenue = 0m,
                 Profit = 0m,
-                Winners = new List<Player>()
+                Winners = new List<WinnerDisplayInfo>()
             };
         }
     }
