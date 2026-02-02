@@ -28,6 +28,18 @@ namespace Lottery.Core.Services
             return _players;
         }
 
+        public void BuyTickets(int humanTicketCount)
+        {
+            foreach (var player in _players)
+            {
+                var ticketCount = player.IsCPU
+                    ? _random.Next(_settings.MinTicketsPerPlayer, _settings.MaxTicketsPerPlayer + 1)
+                    : humanTicketCount;
+
+                BuyTicketsForPlayer(player, ticketCount);
+            }
+        }
+
         public LotteryResult ExecuteDraw()
         {
             return new LotteryResult
@@ -36,6 +48,18 @@ namespace Lottery.Core.Services
                 Profit = 0m,
                 Winners = new List<WinnerDisplayInfo>()
             };
+        }
+
+        private void BuyTicketsForPlayer(Player player, int ticketCount)
+        {
+            for (int i = 0; i < ticketCount; i++)
+            {
+                if (player.Balance < _settings.TicketPrice)
+                    break;
+
+                player.Balance -= _settings.TicketPrice;
+                player.Tickets.Add(new Ticket { PlayerId = player.Id });
+            }
         }
 
         private Player CreateHumanPlayer(string name)

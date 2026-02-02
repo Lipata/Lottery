@@ -13,6 +13,10 @@ Console.Write("Enter your name: ");
 var playerName = Console.ReadLine() ?? "Player";
 lotteryService.InitializePlayers(playerName);
 
+Console.Write("How many tickets do you want to buy? ");
+var ticketCount = int.Parse(Console.ReadLine() ?? "1");
+lotteryService.BuyTickets(ticketCount);
+
 var result = lotteryService.ExecuteDraw();
 
 Console.WriteLine($"Players: {lotteryService.GetPlayers().Count()}");

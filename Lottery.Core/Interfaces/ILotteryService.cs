@@ -6,6 +6,8 @@ namespace Lottery.Core.Interfaces
     {
         void InitializePlayers(string humanPlayerName);
 
+        void BuyTickets(int humanTicketCount);
+
         IEnumerable<Player> GetPlayers();
 
         LotteryResult ExecuteDraw();

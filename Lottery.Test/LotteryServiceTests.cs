@@ -27,13 +27,22 @@ namespace Lottery.Test
             _serviceProvider?.Dispose();
         }
 
-        private static LotterySettings CreateSettings(decimal initialBalance = 10m, int minPlayers = 3, int maxPlayers = 5)
+        private static LotterySettings CreateSettings(
+            decimal initialBalance = 10m,
+            decimal ticketPrice = 1m,
+            int minPlayers = 3,
+            int maxPlayers = 5,
+            int minTicketsPerPlayer = 1,
+            int maxTicketsPerPlayer = 10)
         {
             return new LotterySettings
             {
                 InitialBalance = initialBalance,
+                TicketPrice = ticketPrice,
                 MinPlayers = minPlayers,
-                MaxPlayers = maxPlayers
+                MaxPlayers = maxPlayers,
+                MinTicketsPerPlayer = minTicketsPerPlayer,
+                MaxTicketsPerPlayer = maxTicketsPerPlayer
             };
         }
 
@@ -143,6 +152,76 @@ namespace Lottery.Test
 
             var cpuIds = sut.GetPlayers().Where(p => p.IsCPU).Select(p => p.Id).ToList();
             Assert.Equal(new[] { 2, 3, 4 }, cpuIds);
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        public void BuyTickets_HumanPlayerBuysExactTicketCount(int ticketCount)
+        {
+            _sut.InitializePlayers("Test");
+
+            _sut.BuyTickets(ticketCount);
+
+            var humanPlayer = _sut.GetPlayers().First(p => !p.IsCPU);
+            Assert.Equal(ticketCount, humanPlayer.Tickets.Count);
+        }
+
+        [Theory]
+        [InlineData(3)]
+        [InlineData(5)]
+        public void BuyTickets_CpuPlayersBuyRandomTicketCount(int expectedTicketCount)
+        {
+            var settings = CreateSettings();
+            var sut = CreateService(settings, cpuPlayerCount: expectedTicketCount);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(1);
+
+            var cpuPlayers = sut.GetPlayers().Where(p => p.IsCPU);
+            Assert.All(cpuPlayers, p => Assert.Equal(expectedTicketCount, p.Tickets.Count));
+        }
+
+        [Theory]
+        [InlineData(10, 1, 3, 7)]
+        [InlineData(20, 2, 5, 10)]
+        public void BuyTickets_DeductsCorrectAmountFromBalance(
+            decimal initialBalance, decimal ticketPrice, int ticketCount, decimal expectedBalance)
+        {
+            var settings = CreateSettings(initialBalance: initialBalance, ticketPrice: ticketPrice);
+            var sut = CreateService(settings, cpuPlayerCount: 1);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(ticketCount);
+
+            var humanPlayer = sut.GetPlayers().First(p => !p.IsCPU);
+            Assert.Equal(expectedBalance, humanPlayer.Balance);
+        }
+
+        [Fact]
+        public void BuyTickets_StopsWhenBalanceInsufficient()
+        {
+            var settings = CreateSettings(initialBalance: 3m, ticketPrice: 1m);
+            var sut = CreateService(settings, cpuPlayerCount: 1);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(10);
+
+            var humanPlayer = sut.GetPlayers().First(p => !p.IsCPU);
+            Assert.Equal(3, humanPlayer.Tickets.Count);
+            Assert.Equal(0m, humanPlayer.Balance);
+        }
+
+        [Fact]
+        public void BuyTickets_TicketsHaveCorrectPlayerId()
+        {
+            _sut.InitializePlayers("Test");
+
+            _sut.BuyTickets(3);
+
+            var humanPlayer = _sut.GetPlayers().First(p => !p.IsCPU);
+            Assert.All(humanPlayer.Tickets, t => Assert.Equal(humanPlayer.Id, t.PlayerId));
         }
     }
 }
