@@ -9,6 +9,10 @@ var configuration = BuildConfiguration();
 using var serviceProvider = BuildServiceProvider(configuration);
 var lotteryService = serviceProvider.GetRequiredService<ILotteryService>();
 
+Console.Write("Enter your name: ");
+var playerName = Console.ReadLine() ?? "Player";
+lotteryService.InitializePlayers(playerName);
+
 var result = lotteryService.ExecuteDraw();
 
 Console.WriteLine($"Players: {lotteryService.GetPlayers().Count()}");

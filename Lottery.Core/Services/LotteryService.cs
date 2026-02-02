@@ -13,9 +13,12 @@ namespace Lottery.Core.Services
             _settings = settings;
         }
 
-        public void InitializeGame()
+        public void InitializePlayers(string humanPlayerName)
         {
             _players.Clear();
+
+            _players.Add(CreateHumanPlayer(humanPlayerName));
+            _players.AddRange(GenerateCpuPlayers());
         }
 
         public IEnumerable<Player> GetPlayers()
@@ -25,9 +28,6 @@ namespace Lottery.Core.Services
 
         public LotteryResult ExecuteDraw()
         {
-
-            GeneratePlayers();
-
             return new LotteryResult
             {
                 Revenue = 0m,
@@ -36,21 +36,29 @@ namespace Lottery.Core.Services
             };
         }
 
-        private List<Player> GeneratePlayers()
+        private Player CreateHumanPlayer(string name)
+        {
+            return new Player
+            {
+                Id = 1,
+                Name = name,
+                Balance = _settings.InitialBalance,
+                IsCPU = false
+            };
+        }
+
+        private IEnumerable<Player> GenerateCpuPlayers()
         {
             var playerCount = Random.Shared.Next(_settings.MinPlayers, _settings.MaxPlayers + 1);
+            var startId = _players.Count + 1;
 
-            var players =
-                Enumerable.Range(1, playerCount)
+            return Enumerable.Range(startId, playerCount)
                 .Select(i => new Player
                 {
                     Id = i,
                     Name = $"Player {i}",
                     Balance = _settings.InitialBalance
-                })
-                .ToList();
-
-            return players;
+                });
         }
     }
 }

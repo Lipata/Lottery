@@ -4,7 +4,7 @@ namespace Lottery.Core.Interfaces
 {
     public interface ILotteryService
     {
-        void InitializeGame();
+        void InitializePlayers(string humanPlayerName);
 
         IEnumerable<Player> GetPlayers();
 
