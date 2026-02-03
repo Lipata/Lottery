@@ -5,10 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 try
 {
     var configuration = ConfigurationHelper.BuildConfiguration();
-
-    using var serviceProvider = ConfigurationHelper.BuildServiceProvider(configuration);
-    var lotteryService = serviceProvider.GetRequiredService<ILotteryService>();
     var lotterySettings = ConfigurationHelper.GetLotterySettings(configuration);
+
+    using var serviceProvider = new ServiceCollection()
+        .AddLotteryServices(lotterySettings)
+        .BuildServiceProvider();
+
+    var lotteryService = serviceProvider.GetRequiredService<ILotteryService>();
 
     var playerName = ConsoleUI.DisplayWelcome(lotterySettings);
     lotteryService.InitializePlayers(playerName);
