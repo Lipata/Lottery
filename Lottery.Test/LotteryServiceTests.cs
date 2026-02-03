@@ -338,5 +338,68 @@ namespace Lottery.Test
 
             Assert.All(result.AllWinners, w => Assert.Equal(1, w.PlayerId));
         }
+
+        [Fact]
+        public void ExecuteDraw_GrandPrizeHasCorrectPrizePerTicket()
+        {
+            var settings = CreateSettings(initialBalance: 100m, ticketPrice: 1m);
+            var sut = CreateService(settings, cpuPlayerCount: 0);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(10);
+            var result = sut.ExecuteDraw();
+
+            // Revenue = 10, Grand Prize = 50% = 5, 1 winner
+            var expectedPrizePerTicket = 5m;
+            Assert.All(result.GrandPrizeWinners, w => Assert.Equal(expectedPrizePerTicket, w.PrizePerTicket));
+        }
+
+        [Fact]
+        public void ExecuteDraw_SecondTierHasCorrectWinnerCount()
+        {
+            var settings = CreateSettings(initialBalance: 100m, ticketPrice: 1m);
+            var sut = CreateService(settings, cpuPlayerCount: 9);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(5);
+            var result = sut.ExecuteDraw();
+
+            // 10 players total, 10% = 1 winner (minimum 1)
+            var totalTicketsWon = result.SecondTierWinners.Sum(w => w.WinningTicketsCount);
+            Assert.Equal(1, totalTicketsWon);
+        }
+
+        [Fact]
+        public void ExecuteDraw_ThirdTierHasCorrectWinnerCount()
+        {
+            var settings = CreateSettings(initialBalance: 100m, ticketPrice: 1m);
+            var sut = CreateService(settings, cpuPlayerCount: 9);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(5);
+            var result = sut.ExecuteDraw();
+
+            // 10 players total, 20% = 2 winners
+            var totalTicketsWon = result.ThirdTierWinners.Sum(w => w.WinningTicketsCount);
+            Assert.Equal(2, totalTicketsWon);
+        }
+
+        [Theory]
+        [InlineData("Player1", 3, "Player1(3)")]
+        [InlineData("TestUser", 1, "TestUser(1)")]
+        [InlineData("Winner", 10, "Winner(10)")]
+        public void WinnerDisplayInfo_FormatReturnsCorrectString(string name, int ticketCount, string expected)
+        {
+            var winner = new WinnerDisplayInfo
+            {
+                PlayerId = 1,
+                PlayerName = name,
+                WinningTicketsCount = ticketCount,
+                PrizePerTicket = 10m,
+                TotalAmountWon = ticketCount * 10m
+            };
+
+            Assert.Equal(expected, winner.Format());
+        }
     }
 }
