@@ -32,43 +32,34 @@ Welcome to the Bede Lottery, {playerName}!
 
     public static void DisplayResults(LotteryResult result, int cpuPlayerCount)
     {
-        var grandPrizeDisplay = FormatGrandPrize(result.GrandPrizeWinners);
-        var secondTierDisplay = FormatTierWinners(result.SecondTierWinners);
-        var thirdTierDisplay = FormatTierWinners(result.ThirdTierWinners);
+        Console.WriteLine($"\n{cpuPlayerCount} other CPU players also have purchased tickets.");
+        Console.WriteLine("\nTicket Draw Results:\n");
 
-        Console.WriteLine($@"
-{cpuPlayerCount} other CPU players also have purchased tickets.
+        foreach (var tierResult in result.TierResults)
+        {
+            var display = FormatTierWinners(tierResult);
+            Console.WriteLine($"{tierResult.TierName}: {display}\n");
+        }
 
-Ticket Draw Results:
-
-Grand Prize: {grandPrizeDisplay}
-
-Second Tier: {secondTierDisplay}
-
-Third Tier: {thirdTierDisplay}
-
-Congratulations to the winners!
-
-House Profit: {result.Profit:C}
-");
+        Console.WriteLine("Congratulations to the winners!\n");
+        Console.WriteLine($"House Profit: {result.Profit:C}\n");
     }
 
-    private static string FormatGrandPrize(List<WinnerDisplayInfo> winners)
+    private static string FormatTierWinners(TierResult tierResult)
     {
-        if (winners.Count == 0)
-            return "No winner";
-
-        var winner = winners.First();
-        return $"{winner.Format()} wins {winner.TotalAmountWon:C}!";
-    }
-
-    private static string FormatTierWinners(List<WinnerDisplayInfo> winners)
-    {
-        if (winners.Count == 0)
+        if (tierResult.Winners.Count == 0)
             return "No winners";
 
+        var winners = tierResult.Winners;
         var prizePerTicket = winners.First().PrizePerTicket;
         var playersList = string.Join(", ", winners.Select(w => w.Format()));
+
+        if (winners.Count == 1 && winners.First().WinningTicketsCount == 1)
+        {
+            var winner = winners.First();
+            return $"{winner.Format()} wins {winner.TotalAmountWon:C}!";
+        }
+
         return $"Players {playersList} win {prizePerTicket:C} per winning ticket!";
     }
 }

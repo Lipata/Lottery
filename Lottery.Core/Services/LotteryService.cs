@@ -53,21 +53,25 @@ namespace Lottery.Core.Services
             var revenue = CalculateRevenue();
             var allTickets = GetAllTickets();
 
-            var grandPrizeWinners = PickWinnersForTier(_settings.Prizes.GrandPrize, revenue, allTickets);
-            var secondTierWinners = PickWinnersForTier(_settings.Prizes.SecondTier, revenue, allTickets);
-            var thirdTierWinners = PickWinnersForTier(_settings.Prizes.ThirdTier, revenue, allTickets);
+            var tierResults = _settings.Prizes
+                .Select(tier => new TierResult
+                {
+                    TierName = tier.Name,
+                    Winners = PickWinnersForTier(tier, revenue, allTickets)
+                })
+                .ToList();
 
-            var allWinners = grandPrizeWinners.Concat(secondTierWinners).Concat(thirdTierWinners);
-            var totalPrizesPaid = allWinners.Sum(w => w.TotalAmountWon);
+            var totalPrizesPaid = tierResults
+                .SelectMany(t => t.Winners)
+                .Sum(w => w.TotalAmountWon);
+
             var profit = CalculateProfit(revenue, totalPrizesPaid);
 
             return new LotteryResult
             {
                 Revenue = revenue,
                 Profit = profit,
-                GrandPrizeWinners = grandPrizeWinners,
-                SecondTierWinners = secondTierWinners,
-                ThirdTierWinners = thirdTierWinners
+                TierResults = tierResults
             };
         }
 

@@ -43,11 +43,11 @@ namespace Lottery.Test
                 MaxPlayers = maxPlayers,
                 MinTicketsPerPlayer = minTicketsPerPlayer,
                 MaxTicketsPerPlayer = maxTicketsPerPlayer,
-                Prizes = new PrizeSettings
+                Prizes = new List<PrizeTier>
                 {
-                    GrandPrize = new PrizeTier { RevenuePercentage = 0.50m, FixedWinnerCount = 1 },
-                    SecondTier = new PrizeTier { RevenuePercentage = 0.30m, WinnersPercentage = 0.10m },
-                    ThirdTier = new PrizeTier { RevenuePercentage = 0.10m, WinnersPercentage = 0.20m }
+                    new() { Name = "Grand Prize", RevenuePercentage = 0.50m, FixedWinnerCount = 1 },
+                    new() { Name = "Second Tier", RevenuePercentage = 0.30m, WinnersPercentage = 0.10m },
+                    new() { Name = "Third Tier", RevenuePercentage = 0.10m, WinnersPercentage = 0.20m }
                 }
             };
         }
@@ -68,6 +68,11 @@ namespace Lottery.Test
             var mockRandom = new Mock<IRandomGenerator>();
             mockRandom.Setup(r => r.Next(It.IsAny<int>(), It.IsAny<int>())).Returns(cpuPlayerCount);
             return BuildServiceProvider(settings, mockRandom.Object).GetRequiredService<ILotteryService>();
+        }
+
+        private static TierResult GetTierByName(LotteryResult result, string tierName)
+        {
+            return result.TierResults.First(t => t.TierName == tierName);
         }
 
         [Fact]
@@ -285,7 +290,8 @@ namespace Lottery.Test
             sut.BuyTickets(5);
             var result = sut.ExecuteDraw();
 
-            Assert.Single(result.GrandPrizeWinners);
+            var grandPrize = GetTierByName(result, "Grand Prize");
+            Assert.Single(grandPrize.Winners);
         }
 
         [Fact]
@@ -351,7 +357,8 @@ namespace Lottery.Test
 
             // Revenue = 10, Grand Prize = 50% = 5, 1 winner
             var expectedPrizePerTicket = 5m;
-            Assert.All(result.GrandPrizeWinners, w => Assert.Equal(expectedPrizePerTicket, w.PrizePerTicket));
+            var grandPrize = GetTierByName(result, "Grand Prize");
+            Assert.All(grandPrize.Winners, w => Assert.Equal(expectedPrizePerTicket, w.PrizePerTicket));
         }
 
         [Fact]
@@ -365,7 +372,8 @@ namespace Lottery.Test
             var result = sut.ExecuteDraw();
 
             // 10 players total, 10% = 1 winner (minimum 1)
-            var totalTicketsWon = result.SecondTierWinners.Sum(w => w.WinningTicketsCount);
+            var secondTier = GetTierByName(result, "Second Tier");
+            var totalTicketsWon = secondTier.Winners.Sum(w => w.WinningTicketsCount);
             Assert.Equal(1, totalTicketsWon);
         }
 
@@ -380,8 +388,25 @@ namespace Lottery.Test
             var result = sut.ExecuteDraw();
 
             // 10 players total, 20% = 2 winners
-            var totalTicketsWon = result.ThirdTierWinners.Sum(w => w.WinningTicketsCount);
+            var thirdTier = GetTierByName(result, "Third Tier");
+            var totalTicketsWon = thirdTier.Winners.Sum(w => w.WinningTicketsCount);
             Assert.Equal(2, totalTicketsWon);
+        }
+
+        [Fact]
+        public void ExecuteDraw_ReturnsTierResultsForEachPrizeTier()
+        {
+            var settings = CreateSettings(initialBalance: 100m, ticketPrice: 1m);
+            var sut = CreateService(settings, cpuPlayerCount: 5);
+
+            sut.InitializePlayers("Test");
+            sut.BuyTickets(5);
+            var result = sut.ExecuteDraw();
+
+            Assert.Equal(3, result.TierResults.Count);
+            Assert.Contains(result.TierResults, t => t.TierName == "Grand Prize");
+            Assert.Contains(result.TierResults, t => t.TierName == "Second Tier");
+            Assert.Contains(result.TierResults, t => t.TierName == "Third Tier");
         }
 
         [Theory]

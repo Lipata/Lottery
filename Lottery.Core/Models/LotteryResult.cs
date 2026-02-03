@@ -1,15 +1,19 @@
-﻿namespace Lottery.Core.Models
+namespace Lottery.Core.Models
 {
     public class LotteryResult
     {
         public decimal Revenue { get; init; }
         public decimal Profit { get; init; }
-        public List<WinnerDisplayInfo> GrandPrizeWinners { get; init; } = new();
-        public List<WinnerDisplayInfo> SecondTierWinners { get; init; } = new();
-        public List<WinnerDisplayInfo> ThirdTierWinners { get; init; } = new();
+        public List<TierResult> TierResults { get; init; } = new();
 
         public IEnumerable<WinnerDisplayInfo> AllWinners =>
-            GrandPrizeWinners.Concat(SecondTierWinners).Concat(ThirdTierWinners);
+            TierResults.SelectMany(t => t.Winners);
+    }
+
+    public class TierResult
+    {
+        public required string TierName { get; init; }
+        public List<WinnerDisplayInfo> Winners { get; init; } = new();
     }
 
     public class WinnerDisplayInfo
