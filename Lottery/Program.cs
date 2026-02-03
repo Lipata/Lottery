@@ -12,51 +12,16 @@ try
     var lotteryService = serviceProvider.GetRequiredService<ILotteryService>();
     var lotterySettings = GetLotterySettings(configuration);
 
-    Console.Write("Enter your name: ");
-    var playerName = Console.ReadLine() ?? "Player 1";
-    Console.WriteLine($@"
-
-Welcome to the Bede Lottery, {playerName}!
-
-* Your digital balance: {lotterySettings.InitialBalance:C}
-* Ticket Price: {lotterySettings.TicketPrice:C}
-
-");
-
-
-
+    var playerName = DisplayWelcome(lotterySettings);
     lotteryService.InitializePlayers(playerName);
 
-    Console.Write($"How many tickets do you want to buy, {playerName}? ");
-    if (!int.TryParse(Console.ReadLine(), out var ticketCount) || ticketCount < 1 || ticketCount > 10)
-    {
-        Console.WriteLine("Invalid ticket count. Please enter a number between 1 and 10. Using default of 1.");
-        ticketCount = 1;
-    }
+    var ticketCount = PromptForTicketCount(playerName);
     lotteryService.BuyTickets(ticketCount);
 
     var result = lotteryService.ExecuteDraw();
 
     var cpuPlayerCount = lotteryService.GetPlayers().Count(p => p.IsCPU);
-    var grandPrizeDisplay = FormatGrandPrize(result.GrandPrizeWinners);
-    var secondTierDisplay = FormatTierWinners(result.SecondTierWinners);
-    var thirdTierDisplay = FormatTierWinners(result.ThirdTierWinners);
-
-    Console.WriteLine($@"
-{cpuPlayerCount} other CPU players also have purchased tickets.
-
-Ticket Draw Results:
-
-Grand Prize: {grandPrizeDisplay}
-
-Second Tier: {secondTierDisplay}
-
-Third Tier: {thirdTierDisplay}
-
-Congratulations to the winners!
-
-House Profit: {result.Profit:C}
-");
+    DisplayResults(result, cpuPlayerCount);
 }
 catch (InvalidOperationException ex)
 {
@@ -89,6 +54,56 @@ static ServiceProvider BuildServiceProvider(IConfiguration configuration)
         .AddTransient<ILotteryService, LotteryService>()
         .BuildServiceProvider();
 }
+
+static string DisplayWelcome(LotterySettings settings)
+{
+    Console.Write("Enter your name: ");
+    var playerName = Console.ReadLine() ?? "Player 1";
+    Console.WriteLine($@"
+
+Welcome to the Bede Lottery, {playerName}!
+
+* Your digital balance: {settings.InitialBalance:C}
+* Ticket Price: {settings.TicketPrice:C}
+
+");
+    return playerName;
+}
+
+static int PromptForTicketCount(string playerName)
+{
+    Console.Write($"How many tickets do you want to buy, {playerName}? ");
+    if (!int.TryParse(Console.ReadLine(), out var ticketCount) || ticketCount < 1 || ticketCount > 10)
+    {
+        Console.WriteLine("Invalid ticket count. Please enter a number between 1 and 10. Using default of 1.");
+        return 1;
+    }
+    return ticketCount;
+}
+
+static void DisplayResults(LotteryResult result, int cpuPlayerCount)
+{
+    var grandPrizeDisplay = FormatGrandPrize(result.GrandPrizeWinners);
+    var secondTierDisplay = FormatTierWinners(result.SecondTierWinners);
+    var thirdTierDisplay = FormatTierWinners(result.ThirdTierWinners);
+
+    Console.WriteLine($@"
+{cpuPlayerCount} other CPU players also have purchased tickets.
+
+Ticket Draw Results:
+
+Grand Prize: {grandPrizeDisplay}
+
+Second Tier: {secondTierDisplay}
+
+Third Tier: {thirdTierDisplay}
+
+Congratulations to the winners!
+
+House Profit: {result.Profit:C}
+");
+}
+
 
 static string FormatGrandPrize(List<WinnerDisplayInfo> winners)
 {
