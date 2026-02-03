@@ -272,7 +272,7 @@ namespace Lottery.Test
             sut.BuyTickets(5);
             var result = sut.ExecuteDraw();
 
-            Assert.NotEmpty(result.Winners);
+            Assert.NotEmpty(result.AllWinners);
         }
 
         [Fact]
@@ -285,10 +285,7 @@ namespace Lottery.Test
             sut.BuyTickets(5);
             var result = sut.ExecuteDraw();
 
-            // Grand prize = 50% of revenue, 1 winner
-            var grandPrizeAmount = result.Revenue * 0.50m;
-            var grandPrizeWinners = result.Winners.Where(w => w.TotalAmountWon == grandPrizeAmount).ToList();
-            Assert.Single(grandPrizeWinners);
+            Assert.Single(result.GrandPrizeWinners);
         }
 
         [Fact]
@@ -301,7 +298,7 @@ namespace Lottery.Test
             sut.BuyTickets(5);
             var result = sut.ExecuteDraw();
 
-            Assert.All(result.Winners, w => Assert.Equal("TestPlayer", w.PlayerName));
+            Assert.All(result.AllWinners, w => Assert.Equal("TestPlayer", w.PlayerName));
         }
 
         [Fact]
@@ -310,7 +307,7 @@ namespace Lottery.Test
             _sut.InitializePlayers("Test");
             var result = _sut.ExecuteDraw();
 
-            Assert.Empty(result.Winners);
+            Assert.Empty(result.AllWinners);
             Assert.Equal(0m, result.Revenue);
             Assert.Equal(0m, result.Profit);
         }
@@ -325,7 +322,7 @@ namespace Lottery.Test
             sut.BuyTickets(10);
             var result = sut.ExecuteDraw();
 
-            var totalPrizesPaid = result.Winners.Sum(w => w.TotalAmountWon);
+            var totalPrizesPaid = result.AllWinners.Sum(w => w.TotalAmountWon);
             Assert.Equal(result.Revenue - result.Profit, totalPrizesPaid);
         }
 
@@ -339,7 +336,7 @@ namespace Lottery.Test
             sut.BuyTickets(5);
             var result = sut.ExecuteDraw();
 
-            Assert.All(result.Winners, w => Assert.Equal(1, w.PlayerId));
+            Assert.All(result.AllWinners, w => Assert.Equal(1, w.PlayerId));
         }
     }
 }

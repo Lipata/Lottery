@@ -52,24 +52,22 @@ namespace Lottery.Core.Services
         {
             var revenue = CalculateRevenue();
             var allTickets = GetAllTickets();
-            var winners = new List<WinnerDisplayInfo>();
 
             var grandPrizeWinners = PickWinnersForTier(_settings.Prizes.GrandPrize, revenue, allTickets);
             var secondTierWinners = PickWinnersForTier(_settings.Prizes.SecondTier, revenue, allTickets);
             var thirdTierWinners = PickWinnersForTier(_settings.Prizes.ThirdTier, revenue, allTickets);
 
-            winners.AddRange(grandPrizeWinners);
-            winners.AddRange(secondTierWinners);
-            winners.AddRange(thirdTierWinners);
-
-            var totalPrizesPaid = winners.Sum(w => w.TotalAmountWon);
+            var allWinners = grandPrizeWinners.Concat(secondTierWinners).Concat(thirdTierWinners);
+            var totalPrizesPaid = allWinners.Sum(w => w.TotalAmountWon);
             var profit = CalculateProfit(revenue, totalPrizesPaid);
 
             return new LotteryResult
             {
                 Revenue = revenue,
                 Profit = profit,
-                Winners = winners
+                GrandPrizeWinners = grandPrizeWinners,
+                SecondTierWinners = secondTierWinners,
+                ThirdTierWinners = thirdTierWinners
             };
         }
 
@@ -100,7 +98,7 @@ namespace Lottery.Core.Services
 
             return winningTickets
                 .GroupBy(t => t.PlayerId)
-                .Select(g => CreateWinnerInfo(g.Key, tier, g.Count(), prizePerWinner))
+                .Select(g => CreateWinnerInfo(g.Key, g.Count(), prizePerWinner))
                 .ToList();
         }
 
@@ -130,7 +128,7 @@ namespace Lottery.Core.Services
             return selected;
         }
 
-        private WinnerDisplayInfo CreateWinnerInfo(int playerId, PrizeTier tier, int winningTicketsCount, decimal prizePerTicket)
+        private WinnerDisplayInfo CreateWinnerInfo(int playerId, int winningTicketsCount, decimal prizePerTicket)
         {
             var player = _players.First(p => p.Id == playerId);
             return new WinnerDisplayInfo
@@ -138,6 +136,7 @@ namespace Lottery.Core.Services
                 PlayerId = playerId,
                 PlayerName = player.Name,
                 WinningTicketsCount = winningTicketsCount,
+                PrizePerTicket = prizePerTicket,
                 TotalAmountWon = winningTicketsCount * prizePerTicket
             };
         }

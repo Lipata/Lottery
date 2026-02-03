@@ -37,15 +37,21 @@ Welcome to the Bede Lottery, {playerName}!
 
     var result = lotteryService.ExecuteDraw();
 
+    var cpuPlayerCount = lotteryService.GetPlayers().Count(p => p.IsCPU);
+    var grandPrizeDisplay = FormatGrandPrize(result.GrandPrizeWinners);
+    var secondTierDisplay = FormatTierWinners(result.SecondTierWinners);
+    var thirdTierDisplay = FormatTierWinners(result.ThirdTierWinners);
 
     Console.WriteLine($@"
-{lotteryService.GetPlayers().Count()} other CPU players also have purchased tickets.
+{cpuPlayerCount} other CPU players also have purchased tickets.
 
-Tickets Draw Results:
+Ticket Draw Results:
 
-* Grand Prize: Player wins !""
-* Second Tier: Players: 
-* Third Tier: Players: 
+Grand Prize: {grandPrizeDisplay}
+
+Second Tier: {secondTierDisplay}
+
+Third Tier: {thirdTierDisplay}
 
 Congratulations to the winners!
 
@@ -82,4 +88,23 @@ static ServiceProvider BuildServiceProvider(IConfiguration configuration)
         .AddTransient<ITicketService, TicketService>()
         .AddTransient<ILotteryService, LotteryService>()
         .BuildServiceProvider();
+}
+
+static string FormatGrandPrize(List<WinnerDisplayInfo> winners)
+{
+    if (winners.Count == 0)
+        return "No winner";
+
+    var winner = winners.First();
+    return $"{winner.Format()} wins {winner.TotalAmountWon:C}!";
+}
+
+static string FormatTierWinners(List<WinnerDisplayInfo> winners)
+{
+    if (winners.Count == 0)
+        return "No winners";
+
+    var prizePerTicket = winners.First().PrizePerTicket;
+    var playersList = string.Join(", ", winners.Select(w => w.Format()));
+    return $"Players {playersList} win {prizePerTicket:C} per winning ticket!";
 }
