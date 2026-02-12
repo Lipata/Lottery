@@ -1,8 +1,10 @@
 <Solution>
   <Project Path="Lottery.Api/Lottery.Api.csproj" />
+  <Project Path="Lottery.AppHost/Lottery.AppHost.csproj" />
   <Project Path="Lottery.Contracts/Lottery.Contracts.csproj" />
   <Project Path="Lottery.Core/Lottery.Core.csproj" />
   <Project Path="Lottery.Data/Lottery.Data.csproj" />
+  <Project Path="Lottery.Payment/Lottery.Payment.csproj" />
   <Project Path="Lottery.Test/Lottery.Test.csproj" />
   <Project Path="Lottery.Web/Lottery.Web.csproj" />
   <Project Path="Lottery/Lottery.csproj" />

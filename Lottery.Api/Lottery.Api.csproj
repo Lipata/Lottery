@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Lottery.Data\Lottery.Data.csproj" />
     <ProjectReference Include="..\Lottery.Contracts\Lottery.Contracts.csproj" />
+    <ProjectReference Include="..\Lottery.ServiceDefaults\Lottery.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>
