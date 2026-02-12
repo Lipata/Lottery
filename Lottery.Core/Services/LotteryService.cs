@@ -1,3 +1,4 @@
+using Lottery.Core.Factories;
 using Lottery.Core.Interfaces;
 using Lottery.Core.Models;
 
@@ -8,18 +9,15 @@ namespace Lottery.Core.Services
         private readonly List<Player> _players = new();
         private readonly LotterySettings _settings;
         private readonly IRandomGenerator _random;
-        private readonly IPlayerFactory _playerFactory;
         private readonly ITicketService _ticketService;
 
         public LotteryService(
             LotterySettings settings,
             IRandomGenerator random,
-            IPlayerFactory playerFactory,
             ITicketService ticketService)
         {
             _settings = settings;
             _random = random;
-            _playerFactory = playerFactory;
             _ticketService = ticketService;
         }
 
@@ -27,8 +25,19 @@ namespace Lottery.Core.Services
         {
             _players.Clear();
 
-            _players.Add(_playerFactory.CreateHumanPlayer(humanPlayerName));
-            _players.AddRange(_playerFactory.CreateCpuPlayers(_players.Count + 1));
+            BasePlayerFactory[] factories =
+            [
+                new HumanPlayerFactory(_settings, humanPlayerName),
+                new CpuPlayerFactory(_settings, _random)
+            ];
+
+            var startId = 1;
+            foreach (var factory in factories)
+            {
+                var players = factory.Create(startId).ToList();
+                _players.AddRange(players);
+                startId += players.Count;
+            }
         }
 
         public IEnumerable<Player> GetPlayers()
