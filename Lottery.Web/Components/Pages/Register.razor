@@ -1,0 +1,135 @@
+@page "/register"
+@rendermode InteractiveServer
+@using Lottery.Contracts
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Register Player</PageTitle>
+
+<h1>Register Player</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm Model="model" OnValidSubmit="HandleSubmit" FormName="register">
+            <div class="mb-3">
+                <label for="playerName" class="form-label">Player Name</label>
+                <InputText id="playerName" class="form-control" @bind-Value="model.Name" />
+            </div>
+            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                @(isSubmitting ? "Registering..." : "Register")
+            </button>
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mt-3">@errorMessage</div>
+        }
+
+        @if (createdPlayer is not null)
+        {
+            <div class="alert alert-success mt-3">
+                <strong>Player registered!</strong><br />
+                Id: @createdPlayer.Id<br />
+                Name: @createdPlayer.Name<br />
+                Balance: @createdPlayer.Balance
+            </div>
+        }
+    </div>
+</div>
+
+<hr />
+
+<h2>Registered Players</h2>
+
+@if (players is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (players.Length == 0)
+{
+    <p>No players registered yet.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var player in players)
+            {
+                <tr>
+                    <td>@player.Id</td>
+                    <td>@player.Name</td>
+                    <td>@player.Balance</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private PlayerModel model = new();
+    private PlayerDto? createdPlayer;
+    private PlayerDto[]? players;
+    private bool isSubmitting;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPlayers();
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        createdPlayer = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("LotteryApi");
+            var response = await client.PostAsJsonAsync("/api/players", new CreatePlayerRequest { Name = model.Name });
+
+            if (response.IsSuccessStatusCode)
+            {
+                createdPlayer = await response.Content.ReadFromJsonAsync<PlayerDto>();
+                model = new();
+                await LoadPlayers();
+            }
+            else
+            {
+                errorMessage = $"Error: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task LoadPlayers()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("LotteryApi");
+            players = await client.GetFromJsonAsync<PlayerDto[]>("/api/players") ?? [];
+        }
+        catch
+        {
+            players = [];
+        }
+    }
+
+    private class PlayerModel
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+}
