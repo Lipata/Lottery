@@ -8,10 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.RabbitMQ.Client" Version="13.1.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Lottery.Contracts\Lottery.Contracts.csproj" />
     <ProjectReference Include="..\Lottery.ServiceDefaults\Lottery.ServiceDefaults.csproj" />
   </ItemGroup>
 </Project>

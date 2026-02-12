@@ -7,17 +7,17 @@ var kafka = builder.AddKafka("kafka");
 
 // API — references all infrastructure
 var api = builder.AddProject<Projects.Lottery_Api>("lottery-api")
-    .WithReference(redis)
-    .WithReference(rabbitMq)
-    .WithReference(kafka);
+    .WithReference(redis).WaitFor(redis)
+    .WithReference(rabbitMq).WaitFor(rabbitMq)
+    .WithReference(kafka).WaitFor(kafka);
 
 // Web — references API via service discovery
 builder.AddProject<Projects.Lottery_Web>("lottery-web")
     .WithExternalHttpEndpoints()
-    .WithReference(api);
+    .WithReference(api).WaitFor(api);
 
-// Payment — references RabbitMQ (stub listener)
+// Payment — consumes RabbitMQ messages
 builder.AddProject<Projects.Lottery_Payment>("lottery-payment")
-    .WithReference(rabbitMq);
+    .WithReference(rabbitMq).WaitFor(rabbitMq);
 
 builder.Build().Run();

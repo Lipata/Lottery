@@ -5,6 +5,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
+builder.AddRedisDistributedCache("redis");
+builder.AddRabbitMQClient("rabbitmq");
+builder.AddKafkaProducer<string, string>("kafka");
+
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
