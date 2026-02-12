@@ -6,12 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="Lottery.Test" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Lottery.Contracts\Lottery.Contracts.csproj" />
-  </ItemGroup>
-
 </Project>
