@@ -10,6 +10,14 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpClient("LotteryApi", client =>
 {
     client.BaseAddress = new Uri("https+http://lottery-api");
+})
+.AddStandardResilienceHandler(options =>
+{
+    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
+    options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+    options.Retry.MaxRetryAttempts = 3;
+    options.Retry.Delay = TimeSpan.FromSeconds(1);
+    options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
 });
 
 var app = builder.Build();
